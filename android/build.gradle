@@ -4,6 +4,7 @@ version '1.0-SNAPSHOT'
 buildscript {
     repositories {
         google()
+        mavenCentral()
         jcenter()
     }
 
@@ -16,6 +17,7 @@ buildscript {
 rootProject.allprojects {
     repositories {
         google()
+        mavenCentral()
         jcenter()
     }
 }
@@ -36,4 +38,6 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'com.github.wseemann:FFmpegMediaMetadataRetriever-core:1.0.16'
+    implementation 'com.github.wseemann:FFmpegMediaMetadataRetriever-native:1.0.16'
 }

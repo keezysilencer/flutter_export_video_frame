@@ -24,44 +24,86 @@ SOFTWARE.
 
 package com.mengtnt.export_video_frame;
 
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Map;
 
+import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
+import io.flutter.plugin.common.StandardMethodCodec;
 
 /** ExportVideoFramePlugin */
-public class ExportVideoFramePlugin implements MethodCallHandler {
-  /** Plugin registration. */
-  public static void registerWith(Registrar registrar) {
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "export_video_frame");
-    FileStorage.share().setContext(registrar.context());
-    AblumSaver.share().setCurrent(registrar.context());
-    PermissionManager.current().setActivity(registrar.activity());
-    ExportVideoFramePlugin plugin = new ExportVideoFramePlugin();
-    plugin.setRegistrar(registrar);
-    channel.setMethodCallHandler(plugin);
-  }
+public class ExportVideoFramePlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
 
-  private Registrar registrar;
+  /// The MethodChannel that will the communication between Flutter and native Android
+  ///
+  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
+  /// when the Flutter Engine is detached from the Activity
+  private MethodChannel channel;
 
-  public void setRegistrar(Registrar registrar) {
-    this.registrar = registrar;
+  @Override
+  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+    channel.setMethodCallHandler(null);
   }
 
   @Override
+  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "export_video_frame");
+    FileStorage.share().setContext(flutterPluginBinding.getApplicationContext());
+    AblumSaver.share().setCurrent(flutterPluginBinding.getApplicationContext());
+    channel.setMethodCallHandler(this);
+  }
+
+  @Override
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+    PermissionManager.current().setActivity(binding.getActivity());
+  }
+
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+  }
+
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+    PermissionManager.current().setActivity(binding.getActivity());
+  }
+
+  @Override
+  public void onDetachedFromActivity() {
+  }
+    /*
+  private void registerPlugin(Context context, BinaryMessenger messenger){
+    BinaryMessenger.TaskQueue taskQueue =
+            messenger.makeBackgroundTaskQueue();
+    MethodChannel methodChannel = new MethodChannel(messenger, "", StandardMethodCodec.INSTANCE,
+            taskQueue);
+
+  }
+    */
+
+
+  @Override
   public void onMethodCall(MethodCall call, final Result result) {
+
+
     if (!PermissionManager.current().isPermissionGranted()) {
       PermissionManager.current().askForPermission();
     }
@@ -71,83 +113,16 @@ public class ExportVideoFramePlugin implements MethodCallHandler {
     }
 
     switch (call.method) {
-      case "cleanImageCache": {
-        Boolean success = FileStorage.share().cleanCache();
-        if (success) {
-          result.success("success");
-        } else {
-          result.error("Clean exception", "Fail", null);
-        }
-        break;
-      }
-      case "saveImage": {
-        String filePath = call.argument("filePath").toString();
-        String albumName = call.argument("albumName").toString();
-        Bitmap waterBitMap = null;
-        PointF waterPoint = null;
-        Double scale = 1.0;
-        AblumSaver.share().setAlbumName(albumName);
-        if (call.argument("waterMark") != null && call.argument("alignment") != null) {
-          String waterPathKey = call.argument("waterMark").toString();
-          AssetManager assetManager = registrar.context().getAssets();
-          String key = registrar.lookupKeyForAsset(waterPathKey);
-          Map<String,Number> rect = call.argument("alignment");
-          Double x = rect.get("x").doubleValue();
-          Double y = rect.get("y").doubleValue();
-          waterPoint = new PointF(x.floatValue(),y.floatValue());
-          Number number = call.argument("scale");
-          scale = number.doubleValue();
-          try {
-            InputStream in = assetManager.open(key);
-            waterBitMap = BitmapFactory.decodeStream(in);
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-        }
-        AblumSaver.share().saveToAlbum(filePath,waterBitMap,waterPoint,scale.floatValue(),result);
-        break;
-      }
-      case "exportGifImagePathList": {
-        String filePath = call.argument("filePath").toString();
-        Number quality = call.argument("quality");
-        ExportImageTask task = new ExportImageTask();
-        task.execute(filePath,quality);
-        task.setCallBack(new Callback() {
-          @Override
-          public void exportPath(ArrayList<String> list) {
-            if (list != null) {
-              result.success(list);
-            } else {
-              result.error("Media exception","Get frame fail", null);
-            }
-          }
-        });
-        break;
-      }
-      case "exportImage": {
-        String filePath = call.argument("filePath").toString();
-        Number number = call.argument("number");
-        Number quality = call.argument("quality");
-        ExportImageTask task = new ExportImageTask();
-        task.execute(filePath,number.intValue(),quality);
-        task.setCallBack(new Callback() {
-          @Override
-          public void exportPath(ArrayList<String> list) {
-            if (list != null) {
-              result.success(list);
-            } else {
-              result.error("Media exception","Get frame fail", null);
-            }
-          }
-        });
+      case "test": {
+        result.success("test passed");
         break;
       }
       case "exportImageBySeconds": {
         String filePath = call.argument("filePath").toString();
         Number duration = call.argument("duration");
-        Number radian = call.argument("radian");
+        Number degrees = call.argument("radian");
         ExportImageTask task = new ExportImageTask();
-        task.execute(filePath,duration.longValue(),radian);
+        task.execute(filePath,duration.longValue(),degrees);
         task.setCallBack(new Callback() {
           @Override
           public void exportPath(ArrayList<String> list) {
@@ -166,5 +141,7 @@ public class ExportVideoFramePlugin implements MethodCallHandler {
     }
 
   }
+
+
 
 }

@@ -124,9 +124,9 @@ class ExportVideoFrame {
   ///    - duration: export the duration of frames
   ///    - radian: rotation the frame ,which will export frame.Rotation is clockwise.
   static Future<File> exportImageBySeconds(
-      File file, Duration duration, double radian) async {
+      File file, Duration duration, double degrees) async {
     var milli = duration.inMilliseconds;
-    var para = {"filePath": file.path, "duration": milli, "radian": radian};
+    var para = {"filePath": file.path, "duration": milli, "radian": degrees};
     final String path =
         await _channel.invokeMethod('exportImageBySeconds', para);
     try {
@@ -144,7 +144,7 @@ class ExportVideoFrame {
   ///    - interval: the time interval between each frame
   ///    - radian: rotation the frame ,which will export frame.Rotation is clockwise.
   static Stream<File> exportImagesFromFile(
-      File file, Duration interval, double radian) async* {
+      File file, Duration interval, double degrees) async* {
     var mediaInfo = MediaInfo();
     var videoInfo = await mediaInfo.getMediaInfo(file.path);
 
@@ -152,7 +152,7 @@ class ExportVideoFrame {
 
     workOnImages = true;
     for (var i = Duration.zero; i < videoLength; i += interval) {
-      var image = await exportImageBySeconds(file, i, radian);
+      var image = await exportImageBySeconds(file, i, degrees);
       if (stopWoringOnImages) {
         break;
       } else {

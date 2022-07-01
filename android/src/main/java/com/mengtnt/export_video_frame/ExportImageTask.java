@@ -35,6 +35,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
 
+import wseemann.media.FFmpegMediaMetadataRetriever;
+
 interface Callback {
     void exportPath(ArrayList<String> list);
 }
@@ -61,9 +63,9 @@ final class ExportImageTask extends AsyncTask<Object,Void,ArrayList<String>> {
         } else if (param instanceof Long) {
             Long duration = (Long)param;
             Number third = (Number)objects[2];
-            float radian = third.floatValue();
+            float degrees = third.floatValue();
             ArrayList result = new ArrayList(1);
-            result.add(exportImageByDuration(filePath,duration,radian));
+            result.add(exportImageByDuration(filePath,duration,degrees));
             return result;
         } else if (param instanceof Number) {
             Number second = (Number)param;
@@ -94,12 +96,13 @@ final class ExportImageTask extends AsyncTask<Object,Void,ArrayList<String>> {
         return result;
     }
 
-    protected  String exportImageByDuration(String filePath,Long duration,float radian) {
-        String result = new String();
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+    protected String exportImageByDuration(String filePath,Long duration,float degrees) {
+        String result = "";
+        FFmpegMediaMetadataRetriever mediaMetadataRetriever = new FFmpegMediaMetadataRetriever();
+       // MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         try {
             mediaMetadataRetriever.setDataSource(filePath);
-            Bitmap bmpOriginal = mediaMetadataRetriever.getFrameAtTime(duration * 1000, MediaMetadataRetriever.OPTION_CLOSEST);
+            Bitmap bmpOriginal = mediaMetadataRetriever.getFrameAtTime(duration * 1000, FFmpegMediaMetadataRetriever.OPTION_CLOSEST_SYNC);
             if (bmpOriginal == null) {
                 throw new Exception("bmpOriginal is null");
             }
@@ -107,11 +110,10 @@ final class ExportImageTask extends AsyncTask<Object,Void,ArrayList<String>> {
             int bmpVideoWidth = bmpOriginal.getWidth();
 
             Matrix m = new Matrix();
-            float degrees = (float) (radian * 180 / Math.PI);
             m.postRotate(degrees);
 
             Bitmap bitmap = Bitmap.createBitmap(bmpOriginal, 0,0,bmpVideoWidth, bmpVideoHeight, m,false);
-            String key = String.format("%s%d%.4f", filePath, duration,radian);
+            String key = String.format("%s%d%.4f", filePath, duration,degrees);
             FileStorage.share().createFile(key,bitmap);
             result = FileStorage.share().filePath(key);
         } catch (Exception e) {
