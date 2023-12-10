@@ -26,7 +26,7 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'com.mengtnt.export_video_frame'
-    compileSdkVersion 28
+    compileSdkVersion 33
 
     defaultConfig {
         minSdkVersion 16
